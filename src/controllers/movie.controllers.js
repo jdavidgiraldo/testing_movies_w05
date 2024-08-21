@@ -1,0 +1,96 @@
+const catchError = require('../utils/catchError')
+const Movie = require('../models/Movie')
+const Director = require('../models/Director')
+const Actor = require('../models/Actor')
+const Genre = require('../models/Genre')
+
+const getAll = catchError(async (req, res) => {
+  const results = await Movie.findAll({ include: [Director, Actor, Genre] })
+  return res.json(results)
+})
+
+const create = catchError(async (req, res) => {
+  const result = await Movie.create(req.body)
+  return res.status(201).json(result)
+})
+
+const getOne = catchError(async (req, res) => {
+  const { id } = req.params
+  const result = await Movie.findByPk(id, { include: [Director, Actor, Genre] })
+  if (!result) return res.sendStatus(404)
+  return res.json(result)
+})
+
+const remove = catchError(async (req, res) => {
+  const { id } = req.params
+  const result = await Movie.destroy({ where: { id } })
+  if (!result) return res.sendStatus(404)
+  return res.sendStatus(204)
+})
+
+const update = catchError(async (req, res) => {
+  const { id } = req.params
+  const result = await Movie.update(req.body, {
+    where: { id },
+    returning: true,
+  })
+  if (result[0] === 0) return res.sendStatus(404)
+  return res.json(result[1][0])
+})
+
+//?/movies/:id/actors
+const setActors = catchError(async (req, res) => {
+  //identificate the movie
+  const { id } = req.params
+  const movie = await Movie.findByPk(id)
+  if (!movie) return res.sendStatus(404)
+
+  //set the actor to a movie
+  await movie.setActors(req.body)
+
+  //get the actors form the set action
+  const actors = await movie.getActors()
+
+  return res.json(actors)
+})
+
+//?/movies/:id/directors
+const setDirectors = catchError(async (req, res) => {
+  //identificate the movie
+  const { id } = req.params
+  const movie = await Movie.findByPk(id)
+  if (!movie) return res.sendStatus(404)
+  //set the director to a movie
+  await movie.setDirectors(req.body)
+
+  //get the directors form the set action
+  const directors = await movie.getDirectors()
+
+  return res.json(directors)
+})
+
+//?/movies/:id/genres
+const setGenres = catchError(async (req, res) => {
+  //identificate the movie
+  const { id } = req.params
+  const movie = await Movie.findByPk(id)
+  if (!movie) return res.sendStatus(404)
+  //set the genres to a movie
+  await movie.setGenres(req.body)
+
+  //get the genres form the set action
+  const genres = await movie.getGenres()
+
+  return res.json(genres)
+})
+
+module.exports = {
+  getAll,
+  create,
+  getOne,
+  remove,
+  update,
+  setActors,
+  setDirectors,
+  setGenres,
+}
